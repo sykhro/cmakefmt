@@ -1,0 +1,40 @@
+name: Deploy Demo
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+            show-progress: false
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: '5.0.1'
+
+      - name: Compile C to WebAssembly
+        run: |
+          mkdir build_wasm
+          cd build_wasm
+          emcmake cmake ..
+          make
+          cp cmakefmt.js ../demo/
+          cp cmakefmt.wasm ../demo/
+
+      - name: Deploy to GitHub Actions Branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./demo
+          publish_branch: gh-actions
+          force_orphan: true

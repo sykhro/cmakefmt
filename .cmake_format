@@ -1,0 +1,10 @@
+---
+IndentWidth: 2
+ColumnLimit: 80
+UseTab: false
+SpacesInParens: false
+SpaceBeforeParens: false
+AlignArguments: true
+ClosingParensOnNewLine: false
+KeepShortStatementOnSameLine: 0
+...

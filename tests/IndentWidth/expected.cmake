@@ -1,0 +1,6 @@
+if(TRUE)
+    set(A B)
+    if(FALSE)
+        message(STATUS "Hello")
+    endif()
+endif()

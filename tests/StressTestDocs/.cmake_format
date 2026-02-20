@@ -1,0 +1,10 @@
+---
+IndentWidth: 4
+AlignArguments: true
+ClosingParensOnNewLine: true
+AlwaysBreakAfterFirstArgument: false
+BreakBeforeKeywordArgument: true
+SpaceBeforeParens: false
+SpacesInParens: false
+UseTab: false
+...

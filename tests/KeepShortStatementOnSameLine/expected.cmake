@@ -1,0 +1,4 @@
+set(A B)
+set(LONG_VARIABLE_NAME
+    VALUE1 VALUE2
+)

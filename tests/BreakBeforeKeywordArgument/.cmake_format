@@ -1,0 +1,5 @@
+---
+BreakBeforeKeywordArgument: true
+IndentWidth: 2
+ClosingParensOnNewLine: true
+AlignArguments: false

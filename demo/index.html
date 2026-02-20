@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMake Formatter (cmakefmt)</title>
+    <style>
+        :root {
+            --bg: #F9F9F9;
+            --panel: #FFFFFF;
+            --text: #000000;
+            --accent: #006699;
+            --border: #CCCCCC;
+            --header-bg: #E4E4E4;
+        }
+        body {
+            font-family: verdana, arial, helvetica, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            margin-top: 0;
+            color: #000;
+            text-align: left;
+            width: 100%;
+            max-width: 1200px;
+            font-size: 24px;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            flex-grow: 1;
+        }
+        .config-panel {
+            grid-column: 1 / -1;
+            background: var(--panel);
+            padding: 10px;
+            border: 1px solid var(--border);
+            min-width: 0;
+        }
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            padding: 10px;
+            border: 1px solid var(--border);
+            min-width: 0;
+        }
+        .editor-container {
+            display: flex;
+            background: #FFFFFF;
+            border: 1px solid var(--border);
+            flex-grow: 1;
+            min-height: 400px;
+            position: relative;
+        }
+        .config-panel .editor-container {
+            min-height: 250px;
+        }
+        .line-numbers {
+            background-color: #E4E4E4;
+            color: #999;
+            padding: 5px;
+            text-align: right;
+            font-family: courier new, monospace;
+            font-size: 13px;
+            border-right: 1px solid var(--border);
+            user-select: none;
+            overflow: hidden;
+            min-width: 25px;
+            line-height: normal;
+        }
+        .editor-container:focus-within {
+            border-color: var(--accent);
+        }
+        textarea, pre {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            font-family: courier new, monospace;
+            font-size: 13px;
+            padding: 5px;
+            border: none;
+            resize: none;
+            box-sizing: border-box;
+            margin: 0;
+            overflow: auto;
+            white-space: pre;
+            word-wrap: normal;
+            line-height: normal;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        textarea {
+            color: transparent;
+            caret-color: #000;
+            z-index: 2;
+        }
+        pre {
+            color: #000;
+            z-index: 1;
+            pointer-events: none;
+        }
+        pre code.hljs {
+            padding: 0;
+            background: transparent;
+        }
+        .editor-content {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+        }
+        td.hljs-ln-numbers {
+            text-align: center;
+            color: #999;
+            border-right: 1px solid #CCC;
+            vertical-align: top;
+            padding-right: 5px !important;
+            user-select: none;
+        }
+        td.hljs-ln-code {
+            padding-left: 10px !important;
+        }
+        label {
+            font-weight: bold;
+            font-size: 12px;
+            margin-bottom: 5px;
+            display: block;
+            background-color: var(--header-bg);
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+        .loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            z-index: 100;
+            color: #000;
+        }
+        .hidden { display: none !important; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">Loading WebAssembly engine...</div>
+
+    <h1>cmakefmt</h1>
+    <p>Auto-formatter for CMake code (in pure C with no external dependencies).</p>
+    <div class="container">
+        <div class="config-panel">
+            <label for="configInput">Configuration (.cmake_format YAML)</label>
+            <div class="editor-container">
+                <div class="line-numbers" id="configLineNumbers"></div>
+                <div class="editor-content">
+                    <pre><code id="configDisplay" class="language-yaml"></code></pre>
+                    <textarea id="configInput" class="config" spellcheck="false" wrap="off">Fetching format configuration...</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <label for="sourceInput">Input CMake</label>
+            <div class="editor-container">
+                <div class="line-numbers" id="inputLineNumbers"></div>
+                <div class="editor-content">
+                    <pre><code id="inputDisplay" class="language-cmake"></code></pre>
+                    <textarea id="sourceInput" spellcheck="false" wrap="off">cmake_minimum_required(   VERSION 3.10...3.25)
+  project( demo  C   CXX   )
+
+        option( ENABLE_FEATURE_A "Enable Feature A"  ON)
+option( ENABLE_B "Enable B"  OFF)
+    option( ENABLE_AWESOME_FEATURE_C "Enable C"  ON)
+
+ if(   APPLE  )
+set( CMAKE_OSX_DEPLOYMENT_TARGET "11.0.0" CACHE STRING "Minimum OS X version"  )
+   message(STATUS "Configuring for macOS"  )
+   endif()
+
+function(  my_messy_function   arg1  arg2 )
+   if(arg1  STREQUAL "FOO" )
+      message("Found FOO" )
+ else()
+ message(  "Not FOO"  )
+      endif()
+      endfunction()
+
+add_executable( demo_app 
+   main.c
+     utils.c
+  rendering.c
+      )
+target_link_libraries( demo_app PRIVATE
+    m  pthread )
+</textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <label for="sourceOutput">Formatted Output</label>
+            <div class="editor-container" style="border:none; padding:0; background:transparent;">
+                <div class="editor-content" style="border: 1px solid var(--border); background: #FFFFFF;">
+                    <pre><code id="sourceOutput" class="language-cmake" style="position:static;"></code></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script async src="cmakefmt.js"></script>
+</body>
+</html>
