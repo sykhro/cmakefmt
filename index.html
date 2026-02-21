@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CMake Formatter (cmakefmt)</title>
+    <style>
+        :root {
+            --bg: #F9F9F9;
+            --panel: #FFFFFF;
+            --text: #000000;
+            --accent: #006699;
+            --border: #CCCCCC;
+            --header-bg: #E4E4E4;
+        }
+        body {
+            font-family: verdana, arial, helvetica, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+        h1 {
+            margin-top: 0;
+            color: #000;
+            text-align: left;
+            width: 100%;
+            max-width: 1200px;
+            font-size: 24px;
+            border-bottom: 2px solid var(--accent);
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+        }
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: auto 1fr;
+            gap: 15px;
+            width: 100%;
+            max-width: 1200px;
+            flex-grow: 1;
+        }
+        .config-panel {
+            grid-column: 1 / -1;
+            background: var(--panel);
+            padding: 10px;
+            border: 1px solid var(--border);
+            min-width: 0;
+        }
+        .editor-panel {
+            display: flex;
+            flex-direction: column;
+            background: var(--panel);
+            padding: 10px;
+            border: 1px solid var(--border);
+            min-width: 0;
+        }
+        .editor-container {
+            display: flex;
+            background: #FFFFFF;
+            flex-grow: 1;
+            min-height: 400px;
+            position: relative;
+        }
+        .config-panel .editor-container {
+            min-height: 250px;
+        }
+        .CodeMirror {
+            width: 100%;
+            height: 100%;
+            font-family: courier new, monospace;
+            font-size: 13px;
+            border: 1px solid var(--border);
+        }
+        .config-panel .CodeMirror {
+            min-height: 250px;
+        }
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: var(--header-bg);
+            padding: 5px;
+            border: 1px solid var(--border);
+            border-bottom: none;
+        }
+        label {
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0;
+        }
+        button {
+            font-size: 11px;
+            padding: 2px 8px;
+            cursor: pointer;
+        }
+        .loading {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(255, 255, 255, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.5rem;
+            z-index: 100;
+            color: #000;
+        }
+        .hidden { display: none !important; }
+    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/cmake/cmake.min.js"></script>
+</head>
+<body>
+    <div id="loading" class="loading">Loading WebAssembly engine...</div>
+
+    <h1>cmakefmt</h1>
+    <p>Auto-formatter for CMake code (in pure C with no external dependencies).</p>
+    <div class="container">
+        <div class="config-panel">
+            <div class="panel-header">
+                <label for="configInput">Configuration (.cmake_format YAML)</label>
+                <button id="btnImportConfig">Import Config...</button>
+                <input type="file" id="fileConfig" style="display:none" accept=".cmake_format,.yaml,.yml">
+            </div>
+            <div class="editor-container">
+                <textarea id="configInput" class="config" style="display:none;">Fetching format configuration...</textarea>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <div class="panel-header">
+                <label for="sourceInput">Input CMake</label>
+                <button id="btnImportSource">Import Input CMake...</button>
+                <input type="file" id="fileSource" style="display:none" accept=".cmake,CMakeLists.txt,.txt">
+            </div>
+            <div class="editor-container">
+                <textarea id="sourceInput" style="display:none;">cmake_minimum_required(   VERSION 3.10...3.25)
+  project( demo  C   CXX   )
+
+        option( ENABLE_FEATURE_A "Enable Feature A"  ON)
+option( ENABLE_B "Enable B"  OFF)
+    option( ENABLE_AWESOME_FEATURE_C "Enable C"  ON)
+
+ if(   APPLE  )
+set( CMAKE_OSX_DEPLOYMENT_TARGET "11.0.0" CACHE STRING "Minimum OS X version"  )
+   message(STATUS "Configuring for macOS"  )
+   endif()
+
+function(  my_messy_function   arg1  arg2 )
+   if(arg1  STREQUAL "FOO" )
+      message("Found FOO" )
+ else()
+ message(  "Not FOO"  )
+      endif()
+      endfunction()
+
+add_executable( demo_app 
+   main.c
+     utils.c
+  rendering.c
+      )
+target_link_libraries( demo_app PRIVATE
+    m  pthread )
+</textarea>
+            </div>
+        </div>
+
+        <div class="editor-panel">
+            <div class="panel-header">
+                <label for="sourceOutput">Formatted Output</label>
+                <button id="btnCopyOutput">Copy Output</button>
+            </div>
+            <div class="editor-container">
+                <textarea id="sourceOutput" style="display:none;"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+    <script async src="cmakefmt.js"></script>
+</body>
+</html>
