@@ -62,7 +62,6 @@
         .editor-container {
             display: flex;
             background: #FFFFFF;
-            border: 1px solid var(--border);
             flex-grow: 1;
             min-height: 400px;
             position: relative;
@@ -70,80 +69,34 @@
         .config-panel .editor-container {
             min-height: 250px;
         }
-        .line-numbers {
-            background-color: #E4E4E4;
-            color: #999;
-            padding: 5px;
-            text-align: right;
-            font-family: courier new, monospace;
-            font-size: 13px;
-            border-right: 1px solid var(--border);
-            user-select: none;
-            overflow: hidden;
-            min-width: 25px;
-            line-height: normal;
-        }
-        .editor-container:focus-within {
-            border-color: var(--accent);
-        }
-        textarea, pre {
+        .CodeMirror {
             width: 100%;
             height: 100%;
-            background: transparent;
             font-family: courier new, monospace;
             font-size: 13px;
-            padding: 5px;
-            border: none;
-            resize: none;
-            box-sizing: border-box;
-            margin: 0;
-            overflow: auto;
-            white-space: pre;
-            word-wrap: normal;
-            line-height: normal;
-            position: absolute;
-            top: 0;
-            left: 0;
+            border: 1px solid var(--border);
         }
-        textarea {
-            color: transparent;
-            caret-color: #000;
-            z-index: 2;
+        .config-panel .CodeMirror {
+            min-height: 250px;
         }
-        pre {
-            color: #000;
-            z-index: 1;
-            pointer-events: none;
-        }
-        pre code.hljs {
-            padding: 0;
-            background: transparent;
-        }
-        .editor-content {
-            flex-grow: 1;
-            position: relative;
-            overflow: hidden;
-        }
-        td.hljs-ln-numbers {
-            text-align: center;
-            color: #999;
-            border-right: 1px solid #CCC;
-            vertical-align: top;
-            padding-right: 5px !important;
-            user-select: none;
-        }
-        td.hljs-ln-code {
-            padding-left: 10px !important;
-        }
-        label {
-            font-weight: bold;
-            font-size: 12px;
-            margin-bottom: 5px;
-            display: block;
+        .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             background-color: var(--header-bg);
             padding: 5px;
             border: 1px solid var(--border);
             border-bottom: none;
+        }
+        label {
+            font-weight: bold;
+            font-size: 12px;
+            margin: 0;
+        }
+        button {
+            font-size: 11px;
+            padding: 2px 8px;
+            cursor: pointer;
         }
         .loading {
             position: fixed;
@@ -158,10 +111,10 @@
         }
         .hidden { display: none !important; }
     </style>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/cmake.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlightjs-line-numbers.js/2.8.0/highlightjs-line-numbers.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/yaml/yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/cmake/cmake.min.js"></script>
 </head>
 <body>
     <div id="loading" class="loading">Loading WebAssembly engine...</div>
@@ -170,23 +123,24 @@
     <p>Auto-formatter for CMake code (in pure C with no external dependencies).</p>
     <div class="container">
         <div class="config-panel">
-            <label for="configInput">Configuration (.cmake_format YAML)</label>
+            <div class="panel-header">
+                <label for="configInput">Configuration (.cmake_format YAML)</label>
+                <button id="btnImportConfig">Import Config...</button>
+                <input type="file" id="fileConfig" style="display:none" accept=".cmake_format,.yaml,.yml">
+            </div>
             <div class="editor-container">
-                <div class="line-numbers" id="configLineNumbers"></div>
-                <div class="editor-content">
-                    <pre><code id="configDisplay" class="language-yaml"></code></pre>
-                    <textarea id="configInput" class="config" spellcheck="false" wrap="off">Fetching format configuration...</textarea>
-                </div>
+                <textarea id="configInput" class="config" style="display:none;">Fetching format configuration...</textarea>
             </div>
         </div>
 
         <div class="editor-panel">
-            <label for="sourceInput">Input CMake</label>
+            <div class="panel-header">
+                <label for="sourceInput">Input CMake</label>
+                <button id="btnImportSource">Import Input CMake...</button>
+                <input type="file" id="fileSource" style="display:none" accept=".cmake,CMakeLists.txt,.txt">
+            </div>
             <div class="editor-container">
-                <div class="line-numbers" id="inputLineNumbers"></div>
-                <div class="editor-content">
-                    <pre><code id="inputDisplay" class="language-cmake"></code></pre>
-                    <textarea id="sourceInput" spellcheck="false" wrap="off">cmake_minimum_required(   VERSION 3.10...3.25)
+                <textarea id="sourceInput" style="display:none;">cmake_minimum_required(   VERSION 3.10...3.25)
   project( demo  C   CXX   )
 
         option( ENABLE_FEATURE_A "Enable Feature A"  ON)
@@ -214,16 +168,16 @@ add_executable( demo_app
 target_link_libraries( demo_app PRIVATE
     m  pthread )
 </textarea>
-                </div>
             </div>
         </div>
 
         <div class="editor-panel">
-            <label for="sourceOutput">Formatted Output</label>
-            <div class="editor-container" style="border:none; padding:0; background:transparent;">
-                <div class="editor-content" style="border: 1px solid var(--border); background: #FFFFFF;">
-                    <pre><code id="sourceOutput" class="language-cmake" style="position:static;"></code></pre>
-                </div>
+            <div class="panel-header">
+                <label for="sourceOutput">Formatted Output</label>
+                <button id="btnCopyOutput">Copy Output</button>
+            </div>
+            <div class="editor-container">
+                <textarea id="sourceOutput" style="display:none;"></textarea>
             </div>
         </div>
     </div>
